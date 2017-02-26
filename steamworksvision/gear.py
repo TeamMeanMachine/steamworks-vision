@@ -1,30 +1,35 @@
+
 import cv2
 import system
 
 INTENSITY_THRESHOLD = 254
-CONTOUR_SIZE_THRESHOLD = 250
-BOILER_TILT_ERROR = 12
+CONTOUR_SIZE_THRESHOLD = 500
+TARGET_TILT_ERROR = 12
 
 DEBUG = 'debug' in system.argv
 
 def contour_filter(contour):
     return cv2.contourArea(contour) > CONTOUR_SIZE_THRESHOLD
 
-def locate_boiler(contours):
+def locate_peg(contours):
     count = len(contours)
     for i in range(0, count - 1):
         fst_cnt = contours[i]
-        fst_leftmost_x = tuple(fst_cnt[fst_cnt[:,:,0].argmin()][0])[0]
-        fst_rightmost_x = tuple(fst_cnt[fst_cnt[:,:,0].argmax()][0])[0]
+        fst_topmost_y = tuple(fst_cnt[fst_cnt[:,:,1].argmin()][0])[1]
+        fst_bottommost_y = tuple(fst_cnt[fst_cnt[:,:,1].argmax()][0])[1]
+
         for j in range(i, count):
             snd_cnt = contours[i]
-            snd_leftmost_x = tuple(snd_cnt[snd_cnt[:,:,0].argmin()][0])[0]
-            left_error = abs(fst_leftmost_x - snd_leftmost_x)
-            if left_error > BOILER_TILT_ERROR: break
+            snd_topmost_y = tuple(snd_cnt[snd_cnt[:,:,1].argmin()][0])[1]
+            top_error = abs(fst_topmost_y - snd_topmost_y)
+            if top_error > TARGET_TILT_ERROR: continue
 
-            snd_rightmost_x = tuple(snd_cnt[snd_cnt[:,:,0].argmax()][0])[0]
-            right_error = abs(fst_rightmost_x - snd_rightmost_x)
-            if right_error <= BOILER_TILT_ERROR:
+            snd_bottommost_y = tuple(snd_cnt[snd_cnt[:,:,1].argmax()][0])[1]
+            bottom_error = abs(fst_bottommost_y - snd_bottomost_y)
+            if bottom_error <= TARGET_TILT_ERROR:
+                fst_leftmost_x = tuple(fst_cnt[fst_cnt[:,:,0].argmin()][0])[0]
+                fst_rightmost_x = tuple(fst_cnt[fst_cnt[:,:,0].argmax()][0])[0]
+
                 return (fst_leftmost_x + fst_rightmost_x) / 2
     return None
 
@@ -33,7 +38,6 @@ def run(in_q, out_q):
     global last_image_number
     while True:
         image_number, ir_img, depth_img = in_q.get()
-
         if last_image_number <= image_number: continue
         last_image_number = image_number
 
@@ -48,4 +52,4 @@ def run(in_q, out_q):
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 pass
 
-        out_q.put('BOILER-{}-{}-0'.format(image_number, target))
+        out_q.put('PEG-{}-{}-0'.format(image_number, target))
