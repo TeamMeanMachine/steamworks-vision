@@ -43,3 +43,9 @@ flycheck_*.el
 
 # directory configuration
 .dir-locals.el
+
+# vim
+*.swp
+
+# python
+*.pyc

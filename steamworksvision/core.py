@@ -1,13 +1,18 @@
 import pyrealsense as pyrs
+import cv2
+import numpy as np
+from pyrealsense.stream import ColourStream, DepthStream
+
 from threading import Thread
 from Queue import Queue, LifoQueue, Full as FullException
 
 from .boiler import run as run_boiler
 from .gear import run as run_gear
 from .network import run as run_network
+from .streams import Infrared2Stream
 
 pyrs.start()
-rs = pyrs.Device()
+rs = pyrs.Device(streams = [ColourStream(), DepthStream(), Infrared2Stream()])
 
 data_q = Queue()
 
