@@ -1,17 +1,26 @@
-
 import cv2
 import sys
 import numpy as np
 
 INTENSITY_THRESHOLD = 254
-CONTOUR_SIZE_THRESHOLD = 25
+CONTOUR_SIZE_THRESHOLD = 5
+CONTOUR_MIN_EXTENT = 0.2
+CONTOUR_MAX_EXTENT = 0.9
 TARGET_TILT_ERROR = 4
 FOV = 70
 
 DEBUG = 'debug' in sys.argv and 'gear' in sys.argv
 
 def contour_filter(contour):
-    return cv2.contourArea(contour) > CONTOUR_SIZE_THRESHOLD
+    area = cv2.contourArea(contour)
+    if area < CONTOUR_SIZE_THRESHOLD: return False
+    x, y, w, h = cv2.boundingRect(contour)
+    rect_area = w * h
+    extent = float(area) / rect_area
+    if extent < CONTOUR_MIN_EXTENT or extent > CONTOUR_MAX_EXTENT: return False
+
+
+    return True
 
 def locate_boiler(contours):
     count = len(contours)
@@ -35,20 +44,24 @@ def locate_boiler(contours):
 
 last_image_number = 0
 def run(in_q, out_q):
-    global last_image_number
+    global last_image_number, depth_offset
     while True:
-        image_number, ir_img, depth_img = in_q.get()
-        width = len(ir_img[0])
+        image_number, original_ir_img, depth_img = in_q.get()
+        width = len(original_ir_img[0])
 
         if last_image_number > image_number: continue
         last_image_number = image_number
 
-        ret, ir_img = cv2.threshold(ir_img.astype(np.uint8), INTENSITY_THRESHOLD, 255, cv2.THRESH_BINARY)
+        ret, ir_img = cv2.threshold(original_ir_img.astype(np.uint8), INTENSITY_THRESHOLD, 255, cv2.THRESH_BINARY)
         ir_img, contours, heirarchy = cv2.findContours(ir_img, cv2.CHAIN_APPROX_SIMPLE, cv2.RETR_LIST)
         contours = filter(contour_filter, contours)
 
         data = locate_boiler(contours)
         target_angle = None
+
+        depth_img = depth_img * 1000
+        depth_img = cv2.applyColorMap(depth_img.astype(np.uint8), cv2.COLORMAP_RAINBOW)
+        ir_img = cv2.cvtColor(original_ir_img, cv2.COLOR_GRAY2BGR)
 
         if data != None:
             target = data
@@ -57,12 +70,13 @@ def run(in_q, out_q):
                 height = len(ir_img[0])
                 
                 if target != None:
-                    ir_img =  cv2.cvtColor(ir_img, cv2.COLOR_GRAY2BGR)
-                    cv2.line(ir_img, (int(target), 0), (int(target), height), (0, 0, 255), 3)
+                    cv2.line(ir_img, (int(target), 0), (int(target), height), (0, 0, 255), 1)
 
         if DEBUG:
-            cv2.imshow('', ir_img)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            cv2.imshow('depth', depth_img)
+            cv2.imshow('target', ir_img)
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
                 pass
 
         result = 'GEAR {} {} 0'.format(image_number, target_angle)

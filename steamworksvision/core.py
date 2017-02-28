@@ -12,7 +12,7 @@ from .network import run as run_network
 from .streams import Infrared2Stream
 
 pyrs.start()
-rs = pyrs.Device(streams = [ColourStream(), DepthStream(), Infrared2Stream()])
+rs = pyrs.Device(streams = [ColourStream(), DepthStream(width=320, height=240), Infrared2Stream(width = 332, height=252)])
 
 data_q = Queue()
 
@@ -40,7 +40,7 @@ while True:
 
     color_img = rs.colour
     ir_img = rs.infrared2
-    depth_img = rs.depth
+    depth_img = rs.depth * rs.depth_scale
 
     try:
         boiler_q.put_nowait((image_number, ir_img, depth_img))
