@@ -1,12 +1,15 @@
 import cv2
 import sys
 import numpy as np
+import time
+
+from .util import IntervalCalculator
 
 INTENSITY_THRESHOLD = 254
-CONTOUR_SIZE_THRESHOLD = 5
+CONTOUR_SIZE_THRESHOLD = 100
 CONTOUR_MIN_EXTENT = 0.2
 CONTOUR_MAX_EXTENT = 0.9
-TARGET_TILT_ERROR = 4
+TARGET_TILT_ERROR = 12
 FOV = 70
 
 DEBUG = 'debug' in sys.argv and 'gear' in sys.argv
@@ -39,12 +42,18 @@ def locate_boiler(contours):
             if bottom_error <= TARGET_TILT_ERROR:
                 fst_leftmost = tuple(fst_cnt[fst_cnt[:,:,0].argmin()][0])
                 snd_rightmost = tuple(snd_cnt[snd_cnt[:,:,0].argmax()][0])
-                return (fst_leftmost[0] + snd_rightmost[0]) / 2
+                x = (fst_leftmost[0] + snd_rightmost[0]) / 2
+                y = (fst_topmost[1] + snd_bottommost[1]) / 2
+                return x, y
     return None
 
-last_image_number = 0
 def run(in_q, out_q):
-    global last_image_number, depth_offset
+    global depth_offset, last_time, fps_smooth, smoothing, fps
+    last_image_number = 0
+
+    if DEBUG:
+        fps_counter = IntervalCalculator()
+
     while True:
         image_number, original_ir_img, depth_img = in_q.get()
         width = len(original_ir_img[0])
@@ -65,14 +74,21 @@ def run(in_q, out_q):
 
         if data != None:
             target = data
-            target_angle = (float(target) / width * FOV) - (FOV / 2)
+            target_angle = (float(target[0]) / width * FOV) - (FOV / 2)
             if DEBUG:
-                height = len(ir_img[0])
-                
                 if target != None:
-                    cv2.line(ir_img, (int(target), 0), (int(target), height), (0, 0, 255), 1)
+                    x, y = map(int, target)
+                    height = len(ir_img[0])
+                    cv2.line(ir_img, (x, 0), (x, height), (0, 0, 255), 3)
+                    cv2.putText(ir_img, 'Target: {} degrees'.format(target_angle), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (50, 205, 50))
 
         if DEBUG:
+            # get framerate
+            fps = fps_counter.calc_interval()
+            cv2.putText(ir_img, 'FPS: {}'.format(fps), (0, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255))
+
+
+            cv2.drawContours(ir_img, contours, -1, (0, 255, 0), 2)
             cv2.imshow('depth', depth_img)
             cv2.imshow('target', ir_img)
             key = cv2.waitKey(1) & 0xFF

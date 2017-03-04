@@ -15,6 +15,6 @@ def run(q):
         if DEBUG:
             print(message)
         try:
-            sock.sendto(message, (IP, PORT))
+            pass#sock.sendto(message, (IP, PORT))
         except:
             pass
