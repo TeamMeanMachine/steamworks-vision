@@ -26,7 +26,7 @@ boiler_thread.start()
 
 gear_thread = Thread(target=run_gear, args = (gear_q, data_q))
 gear_thread.daemon = True
-gear_thread.start()
+#gear_thread.start()
 
 network_thread = Thread(target = run_network, args = (data_q,))
 network_thread.daemon = True
@@ -44,12 +44,12 @@ while True:
 
     color_img = cv2.cvtColor(color_img, cv2.COLOR_RGB2BGR)
 
-
     try:
-        boiler_q.put_nowait((image_number, ir_img, depth_img))
+        boiler_q.put_nowait((image_number, ir_img, depth_img, color_img))
     except FullException:
         pass
     try:
         gear_q.put_nowait((image_number, ir_img, depth_img))
     except FullException:
         pass
+print('program terminate')

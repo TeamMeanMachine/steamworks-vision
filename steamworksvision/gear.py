@@ -25,7 +25,7 @@ def contour_filter(contour):
 
     return True
 
-def locate_boiler(contours):
+def locate(contours):
     count = len(contours)
     for i in range(0, count - 1):
         fst_cnt = contours[i]
@@ -65,7 +65,7 @@ def run(in_q, out_q):
         ir_img, contours, heirarchy = cv2.findContours(ir_img, cv2.CHAIN_APPROX_SIMPLE, cv2.RETR_LIST)
         contours = filter(contour_filter, contours)
 
-        data = locate_boiler(contours)
+        data = locate(contours)
         target_angle = None
 
         depth_img = depth_img * 1000
@@ -95,5 +95,5 @@ def run(in_q, out_q):
             if key == ord('q'):
                 pass
 
-        result = 'GEAR {} {} 0'.format(image_number, target_angle)
+        result = 'GEAR;{};{};0'.format(image_number, target_angle)
         out_q.put(result)

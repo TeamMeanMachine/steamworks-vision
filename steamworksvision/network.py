@@ -15,6 +15,7 @@ def run(q):
         if DEBUG:
             print(message)
         try:
-            pass#sock.sendto(message, (IP, PORT))
+            sock.sendto(message, (IP, PORT))
         except:
-            pass
+            if DEBUG:
+                print('Failed to send packet to roborio')
