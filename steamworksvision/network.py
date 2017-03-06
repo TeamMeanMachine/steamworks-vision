@@ -6,12 +6,13 @@ PORT = 5800
 
 DEBUG = 'debug' in sys.argv and 'network' in sys.argv
 
-def run(q):
-    global IP, PORT
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+def run(in_q, out_q):
+    global sock, IP, PORT
 
     while True:
-        message = q.get()
+        message = out_q.get()
         if DEBUG:
             print(message)
         try:
