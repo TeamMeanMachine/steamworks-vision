@@ -33,7 +33,7 @@ def process(ir_img):
         fst_left_x = fst_bounding_x
         fst_right_x = fst_bounding_x + fst_bounding_width
         for j in range(i+1, count):
-            snd_cnt, snd_bounding_data = filtered_contours[j]
+            snd_cnt, snd_bounding_data = filtered_contours[i]
             snd_bounding_x, snd_bounding_y, snd_bounding_width, snd_bounding_height = snd_bounding_data
 
             snd_left_x = snd_bounding_x

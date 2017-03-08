@@ -5,10 +5,8 @@ import sys
 from threading import Thread
 from time import time
 from Queue import Queue
-
 from pyrealsense.stream import ColourStream, DepthStream
 
-from .camerastream import run_camera_server
 from .boiler import process as process_boiler
 from .network import run as run_network
 from .streams import Infrared2Stream
@@ -17,11 +15,6 @@ from .constants import IR_RESOLUTION
 DEBUG = 'debug' in sys.argv
 
 pyrs.start()
-
-stream_q = Queue()
-stream_thread = Thread(target=run_camera_server, args=(stream_q,))
-stream_thread.daemon = True
-stream_thread.start()
 
 rs = pyrs.Device(streams = [ColourStream(), DepthStream(), Infrared2Stream()])
 
@@ -66,15 +59,13 @@ while True:
     fps = round(fps, 2)
     last_time = now_time
 
-    if processor != None:
-        feed_img = ir_img
-    else:
-        feed_img = color_img
-
-    cv2.putText(feed_img, 'FPS: {}'.format(fps), (0, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (50, 205, 50))
-
-    stream_q.put(feed_img)
-
     if DEBUG:
+        if processor != None:
+            feed_img = ir_img
+        else:
+            feed_img = color_img
+
+        cv2.putText(feed_img, 'FPS: {}'.format(fps), (0, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (50, 205, 50))
+
         cv2.imshow('camera-feed', feed_img)
         cv2.waitKey(1)
