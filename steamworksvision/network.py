@@ -1,8 +1,14 @@
 import socket
 import sys
 
+from networktables import NetworkTables
+
 IP = 'roborio-2471-frc.local'
 PORT = 5800
+
+NetworkTables.initialize(server=IP)
+
+network_table = NetworkTables.getTable('Vision')
 
 DEBUG = 'debug' in sys.argv and 'network' in sys.argv
 

@@ -5,8 +5,6 @@ from .constants import IR_RESOLUTION as RESOLUTION, IR_FOCAL_LENGTH as FOCAL_LEN
 
 INTENSITY_THRESHOLD = 220
 CONTOUR_SIZE_THRESHOLD = 100
-ASPECT_RATIO_ERROR = 8.0
-TARGET_TILT_ERROR = 16
 
 TARGET_WIDTH = 1.25 # in feet
 
@@ -32,18 +30,14 @@ def process(ir_img):
     for i in range(0, count - 1):
         fst_cnt, fst_bounding_data = filtered_contours[i]
         fst_bounding_x, fst_bounding_y, fst_bounding_width, fst_bounding_height = fst_bounding_data
-        fst_left_x = fst_bounding_x
-        fst_right_x = fst_bounding_x + fst_bounding_width
         for j in range(i+1, count):
             snd_cnt, snd_bounding_data = filtered_contours[i]
             snd_bounding_x, snd_bounding_y, snd_bounding_width, snd_bounding_height = snd_bounding_data
 
-            snd_left_x = snd_bounding_x
-            snd_right_x = snd_bounding_x + snd_bounding_width
             # compare
-            if abs(fst_left_x - snd_left_x) < TARGET_TILT_ERROR and abs(fst_right_x - snd_right_x) < TARGET_TILT_ERROR:
+            if abs(fst_bounding_y - snd_bounidng_y) < TARGET_TILT_ERROR and abs(fst_bounding_height - snd_bounding_height) < TARGET_TILT_ERROR:
                 # target found
-                target_x = (fst_left_x + fst_right_x) / 2
+                target_x = (fst_bounding_x + (snd_bounding_x + snd_bounding_width)) / 2
                 target_angle = (float(target_x) / RESOLUTION[0] * FOV) - (FOV / 2)
                 target_distance = (TARGET_WIDTH * FOCAL_LENGTH) / fst_bounding_width
                 return 'BOILER', target_x, target_angle, target_distance

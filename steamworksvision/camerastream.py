@@ -1,52 +1,78 @@
 import cv2
-from PIL import Image
-import threading
-from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
-from SocketServer import ThreadingMixIn
-import StringIO
-import time
-capture=None
+import os
+import sys
+from os import path
+from threading import Thread
 
-class CamHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        if self.path.endswith('.mjpg'):
-            self.send_response(200)
-            self.send_header('Content-type','multipart/x-mixed-replace; boundary=--jpgboundary')
-            self.end_headers()
-            while True:
-                img = capture.get()
-                jpg = Image.fromarray(imgRGB)
-                tmpFile = StringIO.StringIO()
-                jpg.save(tmpFile,'JPEG')
-                self.wfile.write("--jpgboundary")
-                self.send_header('Content-type','image/jpeg')
-                self.send_header('Content-length',str(tmpFile.len))
-                self.end_headers()
-                jpg.save(self.wfile,'JPEG')
-            return
-        if self.path.endswith('.html'):
-            self.send_response(200)
-            self.send_header('Content-type','text/html')
-            self.end_headers()
-            self.wfile.write('<html><head></head><body>')
-            self.wfile.write('<img src="http://127.0.0.1:5801/cam.mjpg"/>')
-            self.wfile.write('</body></html>')
-            return
+import numpy as np
+from flask import Flask, render_template, Response
 
+from .network import network_table
 
-class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-    """Handle requests in a separate thread."""
+FORCE_RECORD = 'record' in sys.argv
 
-def run_camera_server(img_q):
-    global capture
-    capture = img_q
+stream = Flask(__name__)
+image = np.zeros((360, 480, 3), np.uint8)
 
-    global img
-    try:
-        server = ThreadedHTTPServer(('tmmvision', 5801), CamHandler)
-        print("Stream server started")
-        server.serve_forever()
-    except KeyboardInterrupt:
-        capture.release()
-        server.socket.close()
-    print("Stream Server ended")
+@stream.route('/')
+def index():
+    return 'mean machine rulez'
+
+def gen():
+    global image
+    while True:
+        _, img = cv2.imencode('.jpg', image)
+        img = img.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + img + b'\r\n\r\n')
+
+@stream.route('/video_feed')
+def video_feed():
+    return Response(gen(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+outputs = None
+
+# create data folder
+DATA_DIR = 'data'
+if not path.exists(DATA_DIR):
+    os.mkdir(DATA_DIR)
+
+def serve():
+    global stream
+    stream.run(host='0.0.0.0', port=5801, debug=False)
+
+def update(feed_img, ir_img, color_img, depth_img):
+    global DATA_DIR, outputs, image
+
+    image = feed_img
+    if network_table.getBoolean('Record', False) or FORCE_RECORD:
+        if not recording:
+            four_cc = cv2.VideoWriter_fourcc(*'XVID')
+            n = 0
+            while not path.isdir('{}/capture-{}'.format(DATA_DIR, n)):
+                n += 1
+            out_path = '{}/capture-{}'.format(DATA_DIR, n)
+            os.mkdir(out_path)
+
+            feed_out = cv2.VideoWriter('{}/feed.avi'.format(out_path))
+            ir_out = cv2.VideoWriter('{}/ir.avi'.format(out_path))
+            color_out = cv2.VideoWriter('{}/color.avi'.format(out_path))
+            depth_out = cv2.VideoWriter('{}/depth.avi'.format(out_path))
+            outputs = (feed_out, ir_out, color_out, depth_out)
+        else:
+            feed_out, ir_out, color_out, depth_out = outputs
+        feed_out.write(feed_img)
+        ir_out.write(ir_img)
+        color_out.write(color_img)
+        depth_out.write(depth_img)
+    elif outputs != None:
+        # stop recording
+        for out in outputs:
+            out.release()
+        outputs = None
+
+def release():
+    if outputs:
+        for out in outputs:
+            out.release()
