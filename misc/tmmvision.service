@@ -1,0 +1,5 @@
+[Service]
+ExecStart=/home/git/steamworks-vision/start.sh
+
+[Install]
+WantedBy=default.target
