@@ -21,8 +21,9 @@ def run(in_q, out_q):
         message = out_q.get()
         if DEBUG:
             print(message)
+        raw_message = message.encode('ascii')
         try:
-            sock.sendto(message, (IP, PORT))
+            sock.sendto(raw_message, (IP, PORT))
         except:
             if DEBUG:
                 print('Failed to send packet to roborio')
