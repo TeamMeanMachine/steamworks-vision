@@ -79,7 +79,7 @@ while True:
 
     else:
         net_out_q.put('NONE')
-        feed_img = color_img
+        feed_img = cv2.cvtColor(color_img, cv2.COLOR_BGR2RGB)
         #feed_img = np.rot90(np.rot90(feed_img))
 
     # framerate stuff
@@ -95,7 +95,6 @@ while True:
     depth_out_img = cv2.applyColorMap(depth_out_img.astype(np.uint8), cv2.COLORMAP_RAINBOW)
 
     # convert color and rotate 180 degrees
-    feed_img = cv2.cvtColor(feed_img, cv2.COLOR_BGR2RGB)
     (h, w) = feed_img.shape[:2]
     center = (h/w, w/2)
     matrix = cv2.getRotationMatrix2D(center, 180, 1.0)

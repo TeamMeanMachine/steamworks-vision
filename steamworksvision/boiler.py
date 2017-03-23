@@ -2,7 +2,9 @@ import cv2
 import numpy as np
 import logging
 import os
+
 from .constants import IR_RESOLUTION as RESOLUTION, IR_FOCAL_LENGTH as FOCAL_LENGTH, IR_FOV as FOV
+from .network import network_table
 
 INTENSITY_THRESHOLD = 200
 CONTOUR_SIZE_THRESHOLD = 200
@@ -57,10 +59,18 @@ def process(ir_img):
 
             # draw output image
             out_img = cv2.cvtColor(ir_img, cv2.COLOR_GRAY2BGR)
+            # all contours
             for contour in all_contours:
                 cv2.drawContours(out_img, [contour], 0, (255, 0, 0), 2)
-          
-            cv2.line(out_img, (int(target_x), 0), (int(target_x), RESOLUTION[1]), (0, 0, 255), 3)
+
+            # target line
+            cv2.line(out_img, (int(target_x), 0), (int(target_x), RESOLUTION[1]), (0, 0, 255), 2)
+
+            # crosshairs
+            offset = int(network_table.getNumber('Crosshair Offset', 0))
+            base = int(RESOLUTION[0]/2) + offset
+            cv2.line(out_img, (base, 0), (base, RESOLUTION[1]), (0, 255, 255), 1)
+
 
             return 'BOILER', target_angle, target_distance, out_img
     return None
