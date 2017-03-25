@@ -12,6 +12,8 @@ FORCE_RECORD = 'record' in sys.argv
 
 outputs = None
 
+network_table.putBoolean('Record', False)
+
 # create data folder
 DATA_DIR = 'data'
 if not path.exists(DATA_DIR):

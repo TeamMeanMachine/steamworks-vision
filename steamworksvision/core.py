@@ -25,7 +25,7 @@ if not MOCK:
     from pyrealsense.stream import ColourStream, DepthStream
     from .streams import Infrared2Stream
     pyrs.start()
-    rs = pyrs.Device(streams = [ColourStream(), DepthStream(), Infrared2Stream()])
+    rs = pyrs.Device(streams = [ColourStream(width = 1920, height = 1080), DepthStream(), Infrared2Stream()])
 
 processor = None
 
@@ -36,6 +36,7 @@ network_thread = Thread(target = run_network, args=(net_in_q, net_out_q))
 network_thread.daemon = True
 network_thread.start()
 
+network_table.putString('Mode', 'IDLE')
 
 image_number = 0
 last_time = time()
@@ -58,8 +59,14 @@ while True:
         rs.wait_for_frame()
 
         ir_img = cv2.GaussianBlur(rs.infrared2, (5, 5), 0)
-        color_img = rs.colour
+        full_color_img = rs.colour
         depth_img = rs.depth * rs.depth_scale
+
+        ir_img = cv2.flip(ir_img, -1)
+        full_color_img = cv2.flip(full_color_img, -1)
+        depth_img = cv2.flip(depth_img, -1)
+
+        color_img = cv2.resize(full_color_img, (640, 480), interpolation = cv2.INTER_AREA)
     else:
         ir_img = np.zeros((360, 480), np.uint8)
         color_img = np.zeros((360, 480, 3), np.uint8)
@@ -89,16 +96,8 @@ while True:
 
     cv2.putText(feed_img, 'FPS: {}'.format(fps), (0, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (50, 205, 50))
 
-    # ir_out_img = cv2.cvtColor(ir_img, cv2.COLOR_GRAY2BGR)
-    # depth_out_img = cv2.cvtColor(depth_img, cv2.COLOR_GRAY2BGR)
     depth_out_img = depth_img * 1000
     depth_out_img = cv2.applyColorMap(depth_out_img.astype(np.uint8), cv2.COLORMAP_RAINBOW)
-
-    # convert color and rotate 180 degrees
-    (h, w) = feed_img.shape[:2]
-    center = (h/w, w/2)
-    matrix = cv2.getRotationMatrix2D(center, 180, 1.0)
-    # feed_img = cv2.warpAffine(feed_img, matrix, (w, h))
 
     feed.send(feed_img)
     if DEBUG:

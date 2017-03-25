@@ -55,7 +55,7 @@ def process(ir_img):
 
             target_x = (fst_x + fst_x + fst_w) / 2
             target_angle = (float(target_x) / RESOLUTION[0] * FOV) - (FOV / 2)
-            target_distance = 573.0 / max(fst_y, snd_y) * 5 - 1.2 
+            target_distance = 573.0 / min(fst_y, snd_y) * 5 - 1.2 
 
             # draw output image
             out_img = cv2.cvtColor(ir_img, cv2.COLOR_GRAY2BGR)
