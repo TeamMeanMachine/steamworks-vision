@@ -19,7 +19,7 @@ DATA_DIR = 'data'
 if not path.exists(DATA_DIR):
     os.mkdir(DATA_DIR)
 
-def update(feed_img, ir_img, color_img, depth_img):
+def send(feed_img, ir_img, color_img, depth_img):
     global DATA_DIR, outputs
 
     image = feed_img

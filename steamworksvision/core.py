@@ -7,6 +7,7 @@ from threading import Thread
 from time import time
 from queue import Queue
 
+import steamworksvision.recorder as recorder
 import steamworksvision.camerafeed as feed
 from .boiler import process as process_boiler
 from .gear import process as process_peg
@@ -69,6 +70,7 @@ while True:
         color_img = cv2.resize(full_color_img, (640, 480), interpolation = cv2.INTER_AREA)
     else:
         ir_img = np.zeros((360, 480), np.uint8)
+        full_color_img = np.zeros((1080, 1920, 3), np.uint8)
         color_img = np.zeros((360, 480, 3), np.uint8)
         depth_img = np.zeros((360, 480), np.uint16)
 
@@ -99,7 +101,9 @@ while True:
     depth_out_img = depth_img * 1000
     depth_out_img = cv2.applyColorMap(depth_out_img.astype(np.uint8), cv2.COLORMAP_RAINBOW)
 
+
     feed.send(feed_img)
+    recorder.send(feed_img, ir_img, full_color_img, depth_img)
     if DEBUG:
         cv2.imshow('camera-feed', feed_img)
         cv2.waitKey(1)
