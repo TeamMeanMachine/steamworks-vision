@@ -87,5 +87,5 @@ def process(ir_img):
             cv2.line(out_img, (int(target_x), 0), (int(target_x), RESOLUTION[1]), (0, 0, 255), 2)
             cv2.putText(out_img, 'Distance: {}'.format(round(target_distance, 3)), (0, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (50, 205, 50))
 
-            return ('BOILER', target_angle, target_distance), out_img
+            return (target_angle, target_distance), out_img
     return None, out_img

@@ -77,8 +77,8 @@ while True:
         data, feed_img = processor(ir_img)
 
         if data:
-            name, angle, distance = data
-            net_out_q.put('{};{};{};{}'.format(name, timestamp, angle, distance))
+            angle, distance = data
+            net_out_q.put('{};{};{};{}'.format(timestamp, angle, distance))
         else:
             net_out_q.put('NONE')
             #feed_img = cv2.cvtColor(feed_img, cv2.COLOR_GRAY2BGR)
