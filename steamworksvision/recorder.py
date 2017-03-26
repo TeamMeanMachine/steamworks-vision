@@ -14,13 +14,8 @@ outputs = None
 
 network_table.putBoolean('Record', False)
 
-# create data folder
-DATA_DIR = 'data'
-if not path.exists(DATA_DIR):
-    os.mkdir(DATA_DIR)
-
 def send(feed_img, ir_img, color_img, depth_img):
-    global DATA_DIR, outputs
+    global outputs
 
     image = feed_img
     if network_table.getBoolean('Record', False) or FORCE_RECORD:
