@@ -78,7 +78,7 @@ while True:
 
         if data:
             angle, distance = data
-            net_out_q.put('{};{};{};{}'.format(timestamp, angle, distance))
+            net_out_q.put('{};{};{}'.format(timestamp, angle, distance))
         else:
             net_out_q.put('NONE')
             #feed_img = cv2.cvtColor(feed_img, cv2.COLOR_GRAY2BGR)

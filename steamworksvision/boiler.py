@@ -6,10 +6,10 @@ import os
 from .constants import IR_RESOLUTION as RESOLUTION, IR_FOCAL_LENGTH as FOCAL_LENGTH, IR_FOV as FOV
 from .network import network_table
 
-INTENSITY_THRESHOLD = 150
+INTENSITY_THRESHOLD = 185
 CONTOUR_SIZE_THRESHOLD = 100
 ASPECT_RATIO_ERROR = 10.0
-TARGET_TILT_ERROR = 14
+TARGET_TILT_ERROR = 18
 HEIGHT_RATIO_TOLERANCE = 0.8
 
 TARGET_WIDTH = 1.25 # in feet
@@ -20,10 +20,10 @@ def in_range(n1, n2, tolerance):
 def process(ir_img):
     global a, b
     ir_img = ir_img.astype(np.uint8)
-    #_, threshold_img = cv2.threshold(ir_img, INTENSITY_THRESHOLD, 255, cv2.THRESH_BINARY)
-    edge_img = cv2.Canny(ir_img, 35, 350)
+    _, threshold_img = cv2.threshold(ir_img, INTENSITY_THRESHOLD, 255, cv2.THRESH_BINARY)
+    # edge_img = cv2.Canny(ir_img, 35, 350)
 
-    _, all_contours, _ = cv2.findContours(edge_img, cv2.CHAIN_APPROX_SIMPLE, cv2.RETR_LIST)
+    _, all_contours, _ = cv2.findContours(threshold_img, cv2.CHAIN_APPROX_SIMPLE, cv2.RETR_LIST)
 
     boxes = []
     for contour in all_contours:
