@@ -19,12 +19,12 @@ def send(feed_img, ir_img, color_img, depth_img):
 
     image = feed_img
     if network_table.getBoolean('Record', False) or FORCE_RECORD:
-        if not recording:
+        if not outputs:
             four_cc = cv2.VideoWriter_fourcc(*'XVID')
             n = 0
-            while not path.isdir('{}/capture-{}'.format(DATA_DIR, n)):
+            while not path.isdir('data/capture-{}'.format(n)):
                 n += 1
-            out_path = '{}/capture-{}'.format(DATA_DIR, n)
+            out_path = 'data/capture-{}'.format(n)
             print('Recording to directory {}'.format(out_path))
             os.mkdir(out_path)
 

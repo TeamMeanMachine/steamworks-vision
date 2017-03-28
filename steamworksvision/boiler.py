@@ -14,10 +14,13 @@ HEIGHT_RATIO_TOLERANCE = 0.8
 
 TARGET_WIDTH = 1.25 # in feet
 
+def mean(n1, n2):
+    return (n1 + n2) / 2
+
 def in_range(n1, n2, tolerance):
     return abs(n1 - n2) < tolerance
 
-def process(ir_img):
+def process(ir_img, depth_img):
     global a, b
     ir_img = ir_img.astype(np.uint8)
     _, threshold_img = cv2.threshold(ir_img, INTENSITY_THRESHOLD, 255, cv2.THRESH_BINARY)
@@ -73,7 +76,33 @@ def process(ir_img):
 
             width = (fst_w + snd_w) / 2.0
 
-            target_distance = (TARGET_WIDTH * FOCAL_LENGTH) / width
+            # old calculation
+            # target_distance = (TARGET_WIDTH * FOCAL_LENGTH) / width
+
+            # use depth buffer to get distance
+            if fst_y < snd_y:
+                depthline_y = mean(fst_y + fst_h, snd_y)
+            else:
+                depthline_y = mean(snd_y + snd_h, fst_y)
+            depthline_w = min(fst_w, snd_w))
+            depthline_x = max(fst_x, snd_x))
+            depthline_center_x = mean(depthline_x, depthline_x + depthline_w)
+
+            samples = []
+            for n in range(1, int(depthline_w / 2) - 1):
+                if len(samples) > 10:
+                    break
+                sample1 = depth_img[depthline_y][depthline_x + n]
+                sample2 = depth_img[depthline_y][depthline_x - n]
+                if sample1 != 0:
+                    samples.append(sample1)
+                if sample2 != 0:
+                    samples.append(sample2)
+
+            if(len(samples) != 0):
+                target_distance = sum(samples) / len(samples)
+            else:
+                target_distance = 0
 
             # draw output image
             for contour in all_contours:
@@ -84,8 +113,16 @@ def process(ir_img):
                 cv2.rectangle(out_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
             # target line
+            cv2.line(out_img, (depthline_x, depthline_y), (depthline_x + depthline_w, depthline_y), (0, 0, 255), 2)
             cv2.line(out_img, (int(target_x), 0), (int(target_x), RESOLUTION[1]), (0, 0, 255), 2)
             cv2.putText(out_img, 'Distance: {}'.format(round(target_distance, 3)), (0, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (50, 205, 50))
 
             return (target_angle, target_distance), out_img
+
+    for contour in all_contours:
+        cv2.drawContours(out_img, [contour], 0, (255, 0, 0), 2)
+
+    for box in boxes:
+        x, y, w, h = box
+        cv2.rectangle(out_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
     return None, out_img

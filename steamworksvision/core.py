@@ -25,9 +25,9 @@ else: FORCE = None
 if not MOCK:
     import pyrealsense as pyrs
     from pyrealsense.stream import ColourStream, DepthStream
-    from .streams import Infrared2Stream
+    from .streams import InfraredStream
     pyrs.start()
-    rs = pyrs.Device(streams = [ColourStream(), DepthStream(), Infrared2Stream()])
+    rs = pyrs.Device(streams = [ColourStream(), DepthStream(), InfraredStream()])
 
 
 clock.init('roborio-2471-frc.local', 8082)
@@ -62,19 +62,16 @@ while True:
     if not MOCK:
         rs.wait_for_frame()
 
-        ir_img = cv2.GaussianBlur(rs.infrared2, (5, 5), 0)
-        full_color_img = rs.colour
-        depth_img = rs.depth * rs.depth_scale
-
-        color_img = cv2.resize(full_color_img, (640, 480), interpolation = cv2.INTER_AREA)
+        ir_img = cv2.GaussianBlur(rs.infrared, (5, 5), 0)
+        color_img = rs.colour
+        depth_img = rs.depth * rs.depth_scale * 3.28084 # convert from meters to feet
     else:
         ir_img = np.zeros((360, 480), np.uint8)
-        full_color_img = np.zeros((1080, 1920, 3), np.uint8)
         color_img = np.zeros((360, 480, 3), np.uint8)
         depth_img = np.zeros((360, 480), np.uint16)
 
     if processor:
-        data, feed_img = processor(ir_img)
+        data, feed_img = processor(ir_img, depth_img)
 
         if data:
             angle, distance = data
@@ -98,7 +95,7 @@ while True:
     depth_out_img = cv2.applyColorMap(depth_out_img.astype(np.uint8), cv2.COLORMAP_RAINBOW)
 
     feed.send(feed_img)
-    recorder.send(feed_img, ir_img, full_color_img, depth_img)
+    recorder.send(feed_img, ir_img, color_img, depth_img)
     if DEBUG:
         cv2.imshow('camera-feed', feed_img)
         cv2.waitKey(1)
